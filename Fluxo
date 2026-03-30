@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluxo Enfermagem UnB</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+--bg: #0d0f14;
+--surface: #161920;
+--border: #252830;
+--text: #e8eaf0;
+--muted: #6b7080;
+--done: #2d6a4f;
+--done-bg: #1a3d2e;
+--done-border: #40916c;
+--available: #1a3a6b;
+--available-bg: #0f2444;
+--available-border: #3b82f6;
+--locked: #2a1f1f;
+--locked-border: #4a2020;
+--locked-text: #8a6060;
+--accent: #3b82f6;
+--gold: #f59e0b;
+--red: #ef4444;
+--green: #22c55e;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+background: var(--bg);
+color: var(--text);
+font-family: 'DM Sans', sans-serif;
+min-height: 100vh;
+padding: 20px;
+}
+
+header {
+text-align: center;
+padding: 32px 20px 24px;
+border-bottom: 1px solid var(--border);
+margin-bottom: 28px;
+}
+
+header h1 {
+font-family: 'Space Mono', monospace;
+font-size: clamp(1.1rem, 3vw, 1.6rem);
+letter-spacing: 0.08em;
+color: var(--accent);
+text-transform: uppercase;
+}
+
+header p {
+color: var(--muted);
+font-size: 0.85rem;
+margin-top: 6px;
+font-family: 'Space Mono', monospace;
+}
+
+.legend {
+display: flex;
+gap: 16px;
+flex-wrap: wrap;
+justify-content: center;
+margin-bottom: 28px;
+padding: 14px 20px;
+background: var(--surface);
+border-radius: 8px;
+border: 1px solid var(--border);
+max-width: 700px;
+margin-left: auto;
+margin-right: auto;
+}
+
+.legend-item {
+display: flex;
+align-items: center;
+gap: 7px;
+font-size: 0.8rem;
+color: var(--muted);
+}
+
+.dot {
+width: 11px; height: 11px;
+border-radius: 50%;
+}
+
+.dot-done { background: var(--done-border); }
+.dot-avail { background: var(--accent); }
+.dot-locked { background: var(--locked-border); }
+
+.controls {
+display: flex;
+gap: 10px;
+flex-wrap: wrap;
+justify-content: center;
+margin-bottom: 28px;
+}
+
+.btn {
+padding: 8px 18px;
+border-radius: 6px;
+border: 1px solid var(--border);
+background: var(--surface);
+color: var(--text);
+font-family: 'Space Mono', monospace;
+font-size: 0.75rem;
+cursor: pointer;
+}
+
+.btn-reset { border-color: var(--red); color: var(--red); }
+
+.semester-block {
+margin-bottom: 20px;
+border: 1px solid var(--border);
+border-radius: 10px;
+overflow: hidden;
+max-width: 900px;
+margin-left: auto;
+margin-right: auto;
+}
+
+.semester-header {
+padding: 12px 18px;
+background: var(--surface);
+display: flex;
+justify-content: space-between;
+}
+
+.semester-title {
+font-family: 'Space Mono', monospace;
+font-size: 0.8rem;
+color: var(--accent);
+}
+
+.cards-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+gap: 1px;
+background: var(--border);
+}
+
+.card {
+background: var(--bg);
+padding: 14px;
+cursor: pointer;
+}
+
+.card.done {
+background: var(--done-bg);
+border-left: 3px solid var(--done-border);
+}
+
+.card.available {
+background: var(--available-bg);
+border-left: 3px solid var(--available-border);
+}
+
+.card.locked {
+background: var(--locked);
+border-left: 3px solid var(--locked-border);
+opacity: 0.6;
+}
+
+.card-name {
+font-size: 0.9rem;
+margin-bottom: 5px;
+}
+
+.card-code {
+font-size: 0.7rem;
+color: var(--muted);
+}
+
+.card-prereqs {
+font-size: 0.7rem;
+color: var(--muted);
+margin-top: 6px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Fluxo Enfermagem UnB</h1>
+<p>Clique nas matérias para marcar como concluídas</p>
+</header>
+
+<div class="controls">
+<button class="btn" onclick="resetAll()">Resetar</button>
+</div>
+
+<div id="container"></div>
+
+<script>
+
+const DISCIPLINES = [
+{code:'FCE0192',name:'Do Átomo à Célula',sem:1,prereqs:[]},
+{code:'FCE0198',name:'Biofísica',sem:1,prereqs:[]},
+{code:'FCE0204',name:'Do Gene à Vida',sem:2,prereqs:['FCE0192']},
+{code:'FCE0224',name:'Integração Metabólica',sem:2,prereqs:['FCE0192']},
+{code:'FCE0235',name:'Relacionamento Interpessoal',sem:2,prereqs:[]},
+{code:'FCE0247',name:'Semiologia 1',sem:3,prereqs:['FCE0224','FCE0235','FCE0204']},
+{code:'FCE0170',name:'Semiologia 2',sem:4,prereqs:['FCE0247']},
+{code:'FCE0362',name:'Cuidado Adulto',sem:5,prereqs:['FCE0170']},
+{code:'FCE0173',name:'Práticas 4',sem:6,prereqs:['FCE0362']},
+{code:'FCE0183',name:'Estágio 1',sem:9,prereqs:['FCE0173']},
+];
+
+let done = JSON.parse(localStorage.getItem("done") || "[]");
+
+function isAvailable(d){
+return d.prereqs.every(p => done.includes(p));
+}
+
+function toggle(code){
+if(done.includes(code)){
+done = done.filter(x => x !== code);
+}else{
+done.push(code);
+}
+localStorage.setItem("done", JSON.stringify(done));
+render();
+}
+
+function resetAll(){
+if(confirm("Resetar tudo?")){
+done = [];
+localStorage.setItem("done", JSON.stringify(done));
+render();
+}
+}
+
+function render(){
+const c = document.getElementById("container");
+c.innerHTML = "";
+
+let semesters = [...new Set(DISCIPLINES.map(d=>d.sem))];
+
+semesters.forEach(sem=>{
+let block = document.createElement("div");
+block.className = "semester-block";
+
+block.innerHTML = `<div class="semester-header">
+<span class="semester-title">${sem}º semestre</span>
+</div>`;
+
+let grid = document.createElement("div");
+grid.className = "cards-grid";
+
+DISCIPLINES.filter(d=>d.sem===sem).forEach(d=>{
+let div = document.createElement("div");
+div.classList.add("card");
+
+if(done.includes(d.code)) div.classList.add("done");
+else if(isAvailable(d)) div.classList.add("available");
+else div.classList.add("locked");
+
+div.innerHTML = `
+<div class="card-name">${d.name}</div>
+<div class="card-code">${d.code}</div>
+<div class="card-prereqs">
+${d.prereqs.length ? "Pré-req: "+d.prereqs.join(", ") : "Sem pré-requisito"}
+</div>
+`;
+
+div.onclick = ()=>toggle(d.code);
+
+grid.appendChild(div);
+});
+
+block.appendChild(grid);
+c.appendChild(block);
+});
+}
+
+render();
+
+</script>
+
+</body>
+</html>
