@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluxo Curricular — Enfermagem FCE/UnB</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+–bg: #0d0f14;
+–surface: #161920;
+–border: #252830;
+–text: #e8eaf0;
+–muted: #6b7080;
+–done: #2d6a4f;
+–done-bg: #1a3d2e;
+–done-border: #40916c;
+–available: #1a3a6b;
+–available-bg: #0f2444;
+–available-border: #3b82f6;
+–locked: #2a1f1f;
+–locked-border: #4a2020;
+–locked-text: #8a6060;
+–accent: #3b82f6;
+–gold: #f59e0b;
+–red: #ef4444;
+–green: #22c55e;
+}
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+background: var(–bg);
+color: var(–text);
+font-family: ‘DM Sans’, sans-serif;
+min-height: 100vh;
+padding: 20px;
+}
+
+header {
+text-align: center;
+padding: 32px 20px 24px;
+border-bottom: 1px solid var(–border);
+margin-bottom: 28px;
+}
+
+header h1 {
+font-family: ‘Space Mono’, monospace;
+font-size: clamp(1.1rem, 3vw, 1.6rem);
+letter-spacing: 0.08em;
+color: var(–accent);
+text-transform: uppercase;
+}
+
+header p {
+color: var(–muted);
+font-size: 0.85rem;
+margin-top: 6px;
+font-family: ‘Space Mono’, monospace;
+}
+
+.legend {
+display: flex;
+gap: 16px;
+flex-wrap: wrap;
+justify-content: center;
+margin-bottom: 28px;
+padding: 14px 20px;
+background: var(–surface);
+border-radius: 8px;
+border: 1px solid var(–border);
+max-width: 700px;
+margin-left: auto;
+margin-right: auto;
+}
+
+.legend-item {
+display: flex;
+align-items: center;
+gap: 7px;
+font-size: 0.8rem;
+color: var(–muted);
+}
+
+.dot {
+width: 11px; height: 11px;
+border-radius: 50%;
+flex-shrink: 0;
+}
+
+.dot-done { background: var(–done-border); }
+.dot-avail { background: var(–accent); }
+.dot-locked { background: var(–locked-border); }
+
+.controls {
+display: flex;
+gap: 10px;
+flex-wrap: wrap;
+justify-content: center;
+margin-bottom: 28px;
+}
+
+.btn {
+padding: 8px 18px;
+border-radius: 6px;
+border: 1px solid var(–border);
+background: var(–surface);
+color: var(–text);
+font-family: ‘Space Mono’, monospace;
+font-size: 0.75rem;
+cursor: pointer;
+transition: all 0.18s;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+
+.btn:hover { border-color: var(–accent); color: var(–accent); }
+.btn-reset { border-color: var(–red); color: var(–red); }
+.btn-reset:hover { background: #2a1010; }
+
+.semester-block {
+margin-bottom: 20px;
+border: 1px solid var(–border);
+border-radius: 10px;
+overflow: hidden;
+max-width: 900px;
+margin-left: auto;
+margin-right: auto;
+}
+
+.semester-header {
+padding: 12px 18px;
+background: var(–surface);
+border-bottom: 1px solid var(–border);
+display: flex;
+align-items: center;
+justify-content: space-between;
+}
+
+.semester-title {
+font-family: ‘Space Mono’, monospace;
+font-size: 0.8rem;
+text-transform: uppercase;
+letter-spacing: 0.1em;
+color: var(–accent);
+}
+
+.semester-hours {
+font-size: 0.75rem;
+color: var(–muted);
+font-family: ‘Space Mono’, monospace;
+}
+
+.semester-progress {
+height: 3px;
+background: var(–border);
+position: relative;
+}
+
+.semester-progress-fill {
+height: 100%;
+background: var(–accent);
+transition: width 0.4s ease;
+border-radius: 0 2px 2px 0;
+}
+
+.cards-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+gap: 1px;
+background: var(–border);
+}
+
+.card {
+background: var(–bg);
+padding: 14px 16px;
+cursor: pointer;
+transition: all 0.2s;
+position: relative;
+user-select: none;
+}
+
+.card:hover { background: #131620; }
+
+.card.done {
+background: var(–done-bg);
+border-left: 3px solid var(–done-border);
+}
+
+.card.available {
+background: var(–available-bg);
+border-left: 3px solid var(–available-border);
+}
+
+.card.locked {
+background: var(–locked);
+border-left: 3px solid var(–locked-border);
+opacity: 0.7;
+}
+
+.card.locked .card-name { color: var(–locked-text); }
+
+.card-code {
+font-family: ‘Space Mono’, monospace;
+font-size: 0.65rem;
+color: var(–muted);
+margin-bottom: 5px;
+letter-spacing: 0.05em;
+}
+
+.card-name {
+font-size: 0.82rem;
+font-weight: 500;
+line-height: 1.4;
+margin-bottom: 8px;
+color: var(–text);
+}
+
+.card-meta {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 8px;
+}
+
+.card-hours {
+font-size: 0.7rem;
+color: var(–muted);
+font-family: ‘Space Mono’, monospace;
+}
+
+.card-status-icon {
+font-size: 0.8rem;
+}
+
+.card-prereqs {
+margin-top: 8px;
+font-size: 0.68rem;
+color: var(–muted);
+line-height: 1.5;
+border-top: 1px solid var(–border);
+padding-top: 7px;
+}
+
+.prereq-tag {
+display: inline-block;
+background: #1a1c24;
+border: 1px solid var(–border);
+border-radius: 3px;
+padding: 1px 5px;
+margin: 1px 2px 1px 0;
+font-family: ‘Space Mono’, monospace;
+font-size: 0.62rem;
+color: var(–muted);
+}
+
+.prereq-tag.done-prereq {
+border-color: var(–done-border);
+color: var(–done-border);
+background: var(–done-bg);
+}
+
+.prereq-tag.missing-prereq {
+border-color: var(–red);
+color: var(–red);
+background: #2a1010;
+}
+
+.stats-bar {
+max-width: 900px;
+margin: 0 auto 20px;
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 8px;
+padding: 14px 20px;
+display: flex;
+gap: 24px;
+flex-wrap: wrap;
+align-items: center;
+justify-content: center;
+}
+
+.stat {
+text-align: center;
+}
+
+.stat-value {
+font-family: ‘Space Mono’, monospace;
+font-size: 1.3rem;
+font-weight: 700;
+color: var(–accent);
+}
+
+.stat-label {
+font-size: 0.68rem;
+color: var(–muted);
+text-transform: uppercase;
+letter-spacing: 0.05em;
+margin-top: 2px;
+}
+
+.tip {
+text-align: center;
+color: var(–muted);
+font-size: 0.75rem;
+font-family: ‘Space Mono’, monospace;
+margin-bottom: 20px;
+}
+
+.type-badge {
+font-size: 0.6rem;
+padding: 1px 6px;
+border-radius: 20px;
+font-family: ‘Space Mono’, monospace;
+text-transform: uppercase;
+letter-spacing: 0.04em;
+}
+
+.type-disc { background: #1a2040; color: #6b8cff; border: 1px solid #2a3060; }
+.type-ext  { background: #1a3020; color: #6bcc8f; border: 1px solid #2a5030; }
+.type-aut  { background: #30201a; color: #cc9a6b; border: 1px solid #504030; }
+.type-ori  { background: #2a1a3a; color: #aa6bcc; border: 1px solid #4a2a5a; }
+.type-col  { background: #1a2a30; color: #6baabb; border: 1px solid #2a4a50; }
+
+footer {
+text-align: center;
+color: var(–muted);
+font-size: 0.7rem;
+font-family: ‘Space Mono’, monospace;
+padding: 24px;
+margin-top: 20px;
+border-top: 1px solid var(–border);
+max-width: 900px;
+margin-left: auto;
+margin-right: auto;
+}
+</style>
+
+</head>
+<body>
+
+<header>
+  <h1>Fluxo Curricular · Enfermagem FCE/UnB</h1>
+  <p>Clique nas disciplinas para marcar como concluída · Dados salvos localmente</p>
+</header>
+
+<div class="stats-bar" id="statsBar">
+  <div class="stat"><div class="stat-value" id="statDone">0</div><div class="stat-label">Concluídas</div></div>
+  <div class="stat"><div class="stat-value" id="statAvail">0</div><div class="stat-label">Disponíveis</div></div>
+  <div class="stat"><div class="stat-value" id="statLocked">0</div><div class="stat-label">Bloqueadas</div></div>
+  <div class="stat"><div class="stat-value" id="statHours">0</div><div class="stat-label">Horas concluídas</div></div>
+  <div class="stat"><div class="stat-value" id="statPct">0%</div><div class="stat-label">Progresso</div></div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="dot dot-done"></div> Concluída (clique para marcar)</div>
+  <div class="legend-item"><div class="dot dot-avail"></div> Disponível (pré-req ok)</div>
+  <div class="legend-item"><div class="dot dot-locked"></div> Bloqueada (faltam pré-req)</div>
+</div>
+
+<p class="tip">↑ clique na disciplina para marcar/desmarcar como concluída</p>
+
+<div class="controls">
+  <button class="btn" onclick="markSemester(1)">✓ Marcar 1º sem</button>
+  <button class="btn" onclick="markSemester(2)">✓ Marcar 2º sem</button>
+  <button class="btn" onclick="markSemester(3)">✓ Marcar 3º sem</button>
+  <button class="btn" onclick="markSemester(4)">✓ Marcar 4º sem</button>
+  <button class="btn btn-reset" onclick="resetAll()">↺ Resetar tudo</button>
+</div>
+
+<div id="container"></div>
+
+<footer>
+  Dados salvos no seu navegador (localStorage) · Enfermagem FCE/UnB · 4200h total
+</footer>
+
+<script>
+const DISCIPLINES = [
+  // ── 1º SEMESTRE ─────────────────────────────────────────────────────────────
+  { code:'FCE0145', name:'Suporte e Movimento',                          sem:1, hours:30, type:'disc', prereqs:[] },
+  { code:'FCE0845', name:'Epidemiologia Geral',                          sem:1, hours:60, type:'disc', prereqs:[], isNew:true },
+  { code:'FCE0188', name:'Saúde e Sociedade 1',                          sem:1, hours:60, type:'disc', prereqs:[] },
+  { code:'FCE0192', name:'Do Átomo à Célula',                            sem:1, hours:60, type:'disc', prereqs:[] },
+  { code:'FCE0198', name:'Biofísica',                                    sem:1, hours:60, type:'disc', prereqs:[] },
+  { code:'FCE0201', name:'Org. Morfofuncional e Desenvolvimento Humano', sem:1, hours:60, type:'disc', prereqs:[] },
+  { code:'FCE0178', name:'Contexto Histórico e Social da Enfermagem',    sem:1, hours:30, type:'disc', prereqs:[] },
+  { code:'FCE0886', name:'Extensão Universitária na FCE',                sem:1, hours:30, type:'aut',  prereqs:[], isNew:true },
+
+  // ── 2º SEMESTRE ─────────────────────────────────────────────────────────────
+  { code:'FCE0204', name:'Do Gene à Vida',                               sem:2, hours:30, type:'disc', prereqs:['FCE0192'] },
+  { code:'FCE0206', name:'Epidemiologia Analítica',                      sem:2, hours:60, type:'disc', prereqs:['FCE0187||FCE0845'] },
+  { code:'FCE0862', name:'Saúde e Sociedade 2',                          sem:2, hours:60, type:'disc', prereqs:['FCE0188'], isNew:true },
+  { code:'FCE0222', name:'Integração dos Processos Vitais',              sem:2, hours:60, type:'disc', prereqs:['FCE0201'] },
+  { code:'FCE0224', name:'Integração Metabólica',                        sem:2, hours:30, type:'disc', prereqs:['FCE0192'] },
+  { code:'FCE0231', name:'Sistema Imunitário',                           sem:2, hours:60, type:'disc', prereqs:['FCE0192'] },
+  { code:'FCE0235', name:'Proc. de Trabalho e Relacionamento Interpessoal', sem:2, hours:30, type:'disc', prereqs:['FCE0145','FCE0198','FCE0178||FCE0216'] },
+  { code:'FCE0770', name:'Extensão nas Bases Biológicas e da Saúde (EBBS)', sem:2, hours:30, type:'col',  prereqs:[], isNew:true },
+
+  // ── 3º SEMESTRE ─────────────────────────────────────────────────────────────
+  { code:'FCE0147', name:'Processos Patológicos',                        sem:3, hours:30, type:'disc', prereqs:['FCE0230||FCE0231'] },
+  { code:'FCE0169', name:'Práticas Supervisionadas em Enfermagem 1',     sem:3, hours:30, type:'disc', prereqs:['FCE0235','FCE0224','FCE0204'] },
+  { code:'FCE0247', name:'Semiologia e Semiotécnica 1',                  sem:3, hours:60, type:'disc', prereqs:['FCE0224','FCE0235','FCE0204'] },
+  { code:'FCE0254', name:'Agentes Infecciosos',                          sem:3, hours:60, type:'disc', prereqs:['FCE0231'] },
+  { code:'FCE0264', name:'Sistemas de Manutenção da Vida',               sem:3, hours:60, type:'disc', prereqs:['FCE0222'] },
+  { code:'FCE0397', name:'Processo de Cuidar em Enfermagem',             sem:3, hours:30, type:'disc', prereqs:[] },
+
+  // ── 4º SEMESTRE ─────────────────────────────────────────────────────────────
+  { code:'FCE0246', name:'Farmacologia Básica',                          sem:4, hours:60, type:'disc', prereqs:['FCE0264'] },
+  { code:'FCE0282', name:'Interação Parasito-Hospedeiro',                sem:4, hours:30, type:'disc', prereqs:['FCE0231'] },
+  { code:'FCE0170', name:'Semiologia e Semiotécnica 2',                  sem:4, hours:120, type:'disc', prereqs:['FCE0247','FCE0147','FCE0254','FCE0169||FCE0249'] },
+  { code:'FCE0171', name:'Práticas Supervisionadas em Enfermagem 2',     sem:4, hours:60, type:'disc', prereqs:['FCE0247','FCE0147','FCE0254','FCE0169||FCE0249'] },
+  { code:'FCE0758', name:'Extensão no Processo de Cuidar em Enfermagem', sem:4, hours:45, type:'col',  prereqs:['FCE0178','FCE0235'], isNew:true },
+
+  // ── 5º SEMESTRE ─────────────────────────────────────────────────────────────
+  { code:'FCE0176', name:'Cuidado Integral — Adulto/Idoso Cirúrgico',    sem:5, hours:30, type:'disc', prereqs:['FCE0170||FCE0248','FCE0282','FCE0246','FCE0206','FCE0171||FCE0250'] },
+  { code:'FCE0194', name:'Introdução à Pesquisa Científica',             sem:5, hours:30, type:'disc', prereqs:[] },
+  { code:'FCE0362', name:'Cuidado Integral — Adulto e Idoso',            sem:5, hours:90, type:'disc', prereqs:['FCE0170||FCE0248','FCE0171||FCE0250','FCE0282','FCE0246','FCE0206'] },
+  { code:'FCE0365', name:'Ética, Bioética e Legislação',                 sem:5, hours:30, type:'disc', prereqs:['FCE0208||FCE0862','FCE0248||FCE0170'] },
+  { code:'FCE0172', name:'Práticas Supervisionadas em Enfermagem 3',     sem:5, hours:60, type:'disc', prereqs:['FCE0171||FCE0250','FCE0170||FCE0248'] },
+  { code:'FCE0760', name:'Extensão no Cuidado em Enfermagem ao Adulto e Idoso', sem:5, hours:30, type:'col',  prereqs:['FCE0178','FCE0235'], isNew:true },
+
+  // ── 6º SEMESTRE ─────────────────────────────────────────────────────────────
+  { code:'FCE0179', name:'Processo de Cuidar em Enfermagem na Comunidade', sem:6, hours:30, type:'disc', prereqs:['FCE0362','FCE0172||FCE0364'] },
+  { code:'FCE0849', name:'Sistemas e Políticas de Saúde',                sem:6, hours:60, type:'disc', prereqs:['FCE0188'], isNew:true },
+  { code:'FCE0847', name:'Educação em Saúde',                            sem:6, hours:60, type:'disc', prereqs:[], isNew:true },
+  { code:'FCE0363', name:'Cuidado de Enfermagem Psicossocial em Saúde Mental', sem:6, hours:60, type:'disc', prereqs:['FCE0362','FCE0250||FCE0172','FCE0365'] },
+  { code:'FCE0173', name:'Práticas Supervisionadas em Enfermagem 4',     sem:6, hours:30, type:'disc', prereqs:['FCE0172','FCE0362','FCE0365'] },
+
+  // ── 7º SEMESTRE ─────────────────────────────────────────────────────────────
+  { code:'FCE0278', name:'Teorias e Modelos de Administração',           sem:7, hours:60, type:'disc', prereqs:['FCE0234||FCE0849'] },
+  { code:'FCE0443', name:'Cuidado Integral à Saúde da Mulher',           sem:7, hours:60, type:'disc', prereqs:['FCE0363','FCE0364||FCE0173'], isNew:true },
+  { code:'FCE0444', name:'Práticas Supervisionadas — Saúde da Mulher 1', sem:7, hours:30, type:'disc', prereqs:['FCE0363','FCE0364||FCE0173'], isNew:true },
+  { code:'FCE0445', name:'Práticas Supervisionadas — Saúde da Criança e Adolescente', sem:7, hours:30, type:'disc', prereqs:['FCE0363','FCE0364||FCE0173'], isNew:true },
+  { code:'FCE0446', name:'Cuidado de Enfermagem à Criança e Adolescente', sem:7, hours:60, type:'disc', prereqs:['FCE0363','FCE0364||FCE0173'], isNew:true },
+  { code:'FCE0757', name:'Extensão — Cuidado Mulher, Criança e Adolescente', sem:7, hours:30, type:'col',  prereqs:['FCE0178','FCE0235'], isNew:true },
+
+  // ── 8º SEMESTRE ─────────────────────────────────────────────────────────────
+  { code:'FCE0189', name:'Seminário Integrativo 1',                      sem:8, hours:30, type:'disc', prereqs:[] },
+  { code:'FCE0388', name:'Gerenciamento do Cuidado em Saúde',            sem:8, hours:60, type:'disc', prereqs:['FCE0278','FCE0376','FCE0446','FCE0443'] },
+  { code:'FCE0180', name:'Cuidado de Enfermagem em Situações Críticas e de Risco', sem:8, hours:90, type:'disc', prereqs:['FCE0376','FCE0174||FCE0443','FCE0446','FCE0444','FCE0445'] },
+  { code:'FCE0175', name:'Práticas Supervisionadas em Enfermagem 6',     sem:8, hours:30, type:'disc', prereqs:['FCE0376','FCE0174||FCE0443','FCE0446','FCE0444','FCE0445'] },
+  { code:'FCE0550', name:'TCC em Enfermagem 1',                          sem:8, hours:30, type:'ori',  prereqs:['FCE0194','FCE0376||FCE0446','FCE0443'], isNew:true },
+  { code:'FCE0762', name:'Extensão — Saúde Mental e Situações Críticas', sem:8, hours:30, type:'col',  prereqs:['FCE0178','FCE0235'], isNew:true },
+  { code:'FCE0766', name:'Extensão Livre na UnB',                        sem:8, hours:90, type:'aut',  prereqs:[], isNew:true },
+  { code:'FCE0772', name:'Atividade Autônoma de Extensão — Bases Biológicas', sem:8, hours:30, type:'aut',  prereqs:[], isNew:true },
+
+  // ── 9º SEMESTRE ─────────────────────────────────────────────────────────────
+  { code:'FCE0183', name:'Estágio Curricular Supervisionado em Enfermagem 1', sem:9, hours:450, type:'disc', prereqs:['FCE0388','FCE0177||FCE0180','FCE0175','FCE0178||FCE0378'] },
+  { code:'FCE0764', name:'Extensão no Proc. de Cuidar no Estágio Supervisionado (EPECS)', sem:9, hours:30, type:'col',  prereqs:['FCE0388','FCE0177||FCE0175','FCE0178||FCE0378'], isNew:true },
+
+  // ── 10º SEMESTRE ────────────────────────────────────────────────────────────
+  { code:'FCE0184', name:'Estágio Curricular Supervisionado em Enfermagem 2', sem:10, hours:420, type:'disc', prereqs:['FCE0183'] },
+  { code:'FCE0589', name:'TCC em Enfermagem 2',                          sem:10, hours:30, type:'aut',  prereqs:['FCE0396||FCE0181||FCE0550'], isNew:true },
+];
+
+const TOTAL_HOURS = 4200;
+const STORAGE_KEY = 'enfermagem_fce_done_v2';
+
+function loadDone() {
+  try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+
+function saveDone(done) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...done]));
+}
+
+function prereqMet(prereqExpr, done) {
+  // Each element in prereqs array is ANDed; within each element, || means OR
+  const parts = prereqExpr.split('||');
+  return parts.some(p => done.has(p.trim()));
+}
+
+function isAvailable(disc, done) {
+  if (disc.prereqs.length === 0) return true;
+  return disc.prereqs.every(req => prereqMet(req, done));
+}
+
+function typeLabel(t) {
+  const map = { disc:'Disciplina', ext:'Extensão', col:'At. Coletiva', aut:'At. Autônoma', ori:'Orient. Individual' };
+  return map[t] || t;
+}
+
+function typeBadgeClass(t) {
+  const map = { disc:'type-disc', ext:'type-ext', col:'type-col', aut:'type-aut', ori:'type-ori' };
+  return map[t] || 'type-disc';
+}
+
+let done = loadDone();
+
+function toggle(code) {
+  if (done.has(code)) done.delete(code);
+  else done.add(code);
+  saveDone(done);
+  render();
+}
+
+function markSemester(sem) {
+  DISCIPLINES.filter(d => d.sem === sem).forEach(d => done.add(d.code));
+  saveDone(done);
+  render();
+}
+
+function resetAll() {
+  if (!confirm('Resetar todo o progresso?')) return;
+  done = new Set();
+  saveDone(done);
+  render();
+}
+
+function render() {
+  const container = document.getElementById('container');
+  const semesters = [...new Set(DISCIPLINES.map(d => d.sem))].sort((a,b)=>a-b);
+
+  let totalDone = 0, totalAvail = 0, totalLocked = 0, hoursD = 0;
+
+  DISCIPLINES.forEach(d => {
+    const isDone = done.has(d.code);
+    const avail = !isDone && isAvailable(d, done);
+    if (isDone) { totalDone++; hoursD += d.hours; }
+    else if (avail) totalAvail++;
+    else totalLocked++;
+  });
+
+  document.getElementById('statDone').textContent = totalDone;
+  document.getElementById('statAvail').textContent = totalAvail;
+  document.getElementById('statLocked').textContent = totalLocked;
+  document.getElementById('statHours').textContent = hoursD;
+  document.getElementById('statPct').textContent = Math.round(hoursD/TOTAL_HOURS*100) + '%';
+
+  container.innerHTML = semesters.map(sem => {
+    const discs = DISCIPLINES.filter(d => d.sem === sem);
+    const semDoneCount = discs.filter(d => done.has(d.code)).length;
+    const pct = Math.round(semDoneCount / discs.length * 100);
+    const semHours = discs.reduce((a,d) => a + d.hours, 0);
+
+    const cards = discs.map(d => {
+      const isDone = done.has(d.code);
+      const avail = !isDone && isAvailable(d, done);
+      const statusClass = isDone ? 'done' : avail ? 'available' : 'locked';
+      const icon = isDone ? '✓' : avail ? '○' : '✕';
+
+      const prereqHTML = d.prereqs.length === 0
+        ? '<span style="color:var(--green);font-size:0.65rem;">Sem pré-requisitos</span>'
+        : d.prereqs.map(req => {
+            const parts = req.split('||').map(p=>p.trim());
+            const met = parts.some(p => done.has(p));
+            return parts.map(p =>
+              `<span class="prereq-tag ${done.has(p) ? 'done-prereq' : met ? '' : 'missing-prereq'}">${p}</span>`
+            ).join('<span style="color:var(--muted);font-size:0.6rem;margin:0 2px;">ou</span>');
+          }).join('<br>');
+
+      return `
+        <div class="card ${statusClass}" onclick="toggle('${d.code}')" title="${isDone ? 'Clique para desmarcar' : avail ? 'Clique para marcar como concluída' : 'Pré-requisitos pendentes'}">
+          <div class="card-code">${d.code}${d.isNew ? ' <span style="color:var(--gold);font-size:0.58rem;">NOVO</span>' : ''}</div>
+          <div class="card-name">${d.name}</div>
+          <div class="card-meta">
+            <span class="type-badge ${typeBadgeClass(d.type)}">${typeLabel(d.type)}</span>
+            <span class="card-hours">${d.hours}h</span>
+            <span class="card-status-icon">${icon}</span>
+          </div>
+          <div class="card-prereqs">${prereqHTML}</div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="semester-block">
+        <div class="semester-header">
+          <span class="semester-title">${sem}º Semestre</span>
+          <span class="semester-hours">${semHours}h · ${semDoneCount}/${discs.length} concluídas</span>
+        </div>
+        <div class="semester-progress">
+          <div class="semester-progress-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="cards-grid">${cards}</div>
+      </div>`;
+  }).join('');
+}
+
+render();
+</script>
+
+</body>
+</html>
